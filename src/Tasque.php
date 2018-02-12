@@ -11,23 +11,23 @@ namespace Tasque;
 use Tasque\Component\Storage;
 use Tasque\Component\Task;
 
-abstract class Tasque {
+class Tasque {
 
-    private $_storage;
+    private static $_storage;
 
-    public function __construct(Storage $storage)
-    {
-        $this->_storage = $storage;
+    public static function setStorage($prefix) {
+        self::$_storage = new Storage($prefix);
     }
 
     // 添加任务并入队
     public function enqueue(Task $task) {
-        return $this->_storage->set($task->id, $task->payload)
-            && $this->_storage->push($task->score, $task->id);
+        return self::$_storage->tag($task)->set($task->id, $task->payload)
+            && self::$_storage->push($task->score, $task->id);
     }
 
     // 从队列和哈希中取出任务并执行
-    public function dequeue($task_id) {
+    public function dequeue(Task $task) {
+        // TODO
     }
 
 }

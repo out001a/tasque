@@ -19,12 +19,13 @@ use \Tasque\Component\Storage\Adapter;
 $redis = new \Redis();
 $redis->pconnect('192.168.33.10', 6379);
 
-$storage = new \Tasque\Component\Storage('LOAN', 'test');
-$storage->register($redis, 'redis');
+$storage = new \Tasque\Component\Storage('LOAN');
+$storage->tag('test---')->register($redis, 'redis');
 
 $storage->set('123', json_encode(['a' => 1, 'c' => 2]));
 var_dump($storage->get('123'));
 
 $storage->push(1, 3);
+$storage->push(1, 2);
 
 var_dump($storage->pop(2, 1));

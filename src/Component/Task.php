@@ -21,6 +21,11 @@ abstract class Task {
         $this->__set('payload', $payload);
     }
 
+    final public function __toString()
+    {
+        return __CLASS__;
+    }
+
     final public function __get($name)
     {
         $prop = '_' . lcfirst($name);

@@ -11,10 +11,7 @@ namespace Tasque\Component;
 class Storage {
 
     private $_prefix = '';
-    private $_name = '';
-
-    private $_dict;
-    private $_queue;
+    private $_tag = '';
 
     private $_components = [];
 
@@ -40,6 +37,12 @@ class Storage {
         }
     }
 
+    public function tag($tag)
+    {
+        $this->_tag = strval($tag);
+        return $this;
+    }
+
     public function register($connector = null, $adapter = 'redis', $component = null)
     {
         if ($component) {
@@ -51,53 +54,50 @@ class Storage {
         }
     }
 
-    public function setName($name) {
-        $this->_name = $name;
+    public function set($key, $value)
+    {
+        return $this->_mount('dict')->set($key, $value);
     }
 
-    public function set($key, $value) {
-        $this->_initComponent('dict', 'TODO');
-        return $this->_dict->set($key, $value);
+    public function get($key)
+    {
+        return $this->_mount('dict')->get($key);
     }
 
-    public function get($key) {
-        $this->_initComponent('dict', 'TODO');
-        return $this->_dict->get($key);
+    public function push($score, $member)
+    {
+        return $this->_mount('queue')->push($score, $member);
     }
 
-    public function push($score, $member) {
-        $this->_initComponent('queue', 'TODO');
-        return $this->_queue->push($score, $member);
-    }
-
-    public function pop($score, $limit) {
-        $this->_initComponent('queue', 'TODO');
-        return $this->_queue->pop($score, $limit);
+    public function pop($score, $limit)
+    {
+        return $this->_mount('queue')->pop($score, $limit);
     }
 
     private function _register($component, $adapter = 'redis', $connector = null)
     {
-        $component = ucfirst($component);
+        if (!$this->_tag) {
+            // TODO throw an exception
+            return false;
+        }
         $adapter = ucfirst($adapter);
-
-        $class = __NAMESPACE__ . "\\Storage\\Adapter\\{$adapter}\\{$component}";
+        $class = __NAMESPACE__ . "\\Storage\\Adapter\\{$adapter}\\" . ucfirst($component);
         if (!class_exists($class)) {
             // TODO throw an exception
             return false;
         }
-        $this->_components[lcfirst($component)] = [$class, $connector]; // "{$this->_prefix}:{$component}:{$this->_name}"
+        $this->_components[$this->_tag][$component]
+            = new $class("{$this->_prefix}:{$component}:{$this->_tag}", $connector); // [$class, $connector]
         return true;
     }
 
-    private function _initComponent($component, $name) {
-        if (is_object($this->$component)) {
-            return;
+    private function _mount($component)
+    {
+        if (is_object($this->_components[$this->_tag][$component])) {
+            return $this->_components[$this->_tag][$component];
         }
-        if (!isset($this->_components[$component])) {
-            // TODO throw an exception
-        }
-        list($class, $connector) = $this->_components[$component];
-        $this->$component = new $class($name, $connector);
+        // TODO throw an exception
+        return false;
     }
 
 }
