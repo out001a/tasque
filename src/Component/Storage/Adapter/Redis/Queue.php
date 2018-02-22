@@ -21,6 +21,11 @@ class Queue implements QueueInterface {
         $this->_connector = $connector;
     }
 
+    public function len()
+    {
+        return $this->_connector->zCard($this->_name);
+    }
+
     public function push($score, $member)
     {
         return $this->_connector->zAdd($this->_name, $score, $member);

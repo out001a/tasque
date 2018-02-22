@@ -12,6 +12,8 @@ interface QueueInterface {
 
     function __construct($name, $connector);
 
+    function len();
+
     function push($score, $member);
 
     function pop($score, $limit);

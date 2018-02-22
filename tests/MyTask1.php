@@ -2,11 +2,11 @@
 /**
  * Created by PhpStorm.
  * User: shanhuanming
- * Date: 2018/2/11
- * Time: 12:21
+ * Date: 2018/2/17
+ * Time: 下午8:56
  */
 
-class MyTask extends \Tasque\Component\Task {
+class MyTask1 extends \Tasque\Component\Task {
 
     public function perform()
     {

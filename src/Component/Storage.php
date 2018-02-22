@@ -13,7 +13,10 @@ class Storage {
     private $_prefix = '';
     private $_tag = '';
 
-    private $_components = [];
+    private $_components = [
+        'dict'  => null,
+        'queue' => null,
+    ];
 
     public function __construct($prefix)
     {
@@ -54,6 +57,11 @@ class Storage {
         }
     }
 
+    public function getComponent($component)
+    {
+        return $this->_components[$component];
+    }
+
     public function set($key, $value)
     {
         return $this->_mount('dict')->set($key, $value);
@@ -62,6 +70,14 @@ class Storage {
     public function get($key)
     {
         return $this->_mount('dict')->get($key);
+    }
+
+    public function del($key) {
+        return $this->_mount('dict')->del($key);
+    }
+
+    public function len() {
+        return $this->_mount('queue')->len();
     }
 
     public function push($score, $member)
@@ -74,28 +90,44 @@ class Storage {
         return $this->_mount('queue')->pop($score, $limit);
     }
 
+    public function getName($component)
+    {
+        return "{$this->_prefix}:{$this->_tag}:{$component}";
+    }
+
     private function _register($component, $adapter = 'redis', $connector = null)
     {
-        if (!$this->_tag) {
-            // TODO throw an exception
-            return false;
-        }
         $adapter = ucfirst($adapter);
         $class = __NAMESPACE__ . "\\Storage\\Adapter\\{$adapter}\\" . ucfirst($component);
         if (!class_exists($class)) {
             // TODO throw an exception
             return false;
         }
-        $this->_components[$this->_tag][$component]
-            = new $class("{$this->_prefix}:{$component}:{$this->_tag}", $connector); // [$class, $connector]
+        $this->_components[$component] = [$class, $connector];
         return true;
     }
 
     private function _mount($component)
     {
-        if (is_object($this->_components[$this->_tag][$component])) {
-            return $this->_components[$this->_tag][$component];
+        static $C = [];
+
+        if (!$this->_tag) {
+            // TODO throw an exception
+            return false;
         }
+
+        $name = $this->getName($component);
+
+        if (isset($C[$name])) {
+            return $C[$name];
+        }
+
+        if (isset($this->_components[$component])) {
+            list($class, $connector) = $this->_components[$component];
+            $C[$name] = new $class($name, $connector);
+            return $C[$name];
+        }
+
         // TODO throw an exception
         return false;
     }

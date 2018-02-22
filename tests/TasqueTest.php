@@ -11,7 +11,6 @@ use PHPUnit\Framework\TestCase;
 final class TasqueTest extends TestCase
 {
     public function testTask() {
-        require_once __DIR__ . '/MyTask.php';
         $task = new MyTask(1, 2, [3,4,5]);
         self::assertEquals(1, $task->id);
         self::assertEquals(2, $task->score);
