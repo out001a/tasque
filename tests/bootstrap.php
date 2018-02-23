@@ -22,7 +22,8 @@ class MyTask1 extends \Tasque\Task {
 
     public function perform()
     {
-        var_dump(__CLASS__ . ": {$this->id}");
+        $s = date('Y-m-d H:i:s') . "\t" .  __CLASS__ . ": {$this->id}\n";
+        file_put_contents('/tmp/tasque.log', $s, FILE_APPEND | LOCK_EX);
     }
 }
 
@@ -30,6 +31,7 @@ class MyTask2 extends \Tasque\Task {
 
     public function perform()
     {
-        var_dump(__CLASS__ . ": {$this->id}");
+        $s = date('Y-m-d H:i:s') . "\t" .  __CLASS__ . ": {$this->id}\n";
+        file_put_contents('/tmp/tasque.log', $s, FILE_APPEND | LOCK_EX);
     }
 }

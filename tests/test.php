@@ -15,10 +15,11 @@ $tasques = [];
 
 $task_classes = [MyTask1::class, MyTask2::class];
 foreach ($task_classes as $task_class) {
-    $tasque = new \Tasque\Tasque();
-    $tasque->init($redis, 'LOAN:' . $task_class);
+    $tasque = new \Tasque\Tasque($redis, 'LOAN:' . $task_class);
     $tasques[] = $tasque;
-    $tasque->enqueue(new $task_class(rand(1,1000), time(), [rand(), time()]));
+    for ($i = 0; $i < 5000; $i++) {
+        $tasque->enqueue(new $task_class($i, time(), [rand(), time()]));
+    }
 }
 
 exit();

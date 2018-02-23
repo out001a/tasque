@@ -15,8 +15,9 @@ class Tasque {
     private $_queue;
     private $_dict;
 
-    public function __construct()
+    public function __construct($redis, $name)
     {
+        $this->init($redis, $name);
     }
 
     public function init($redis, $name)

@@ -7,7 +7,7 @@ namespace Tasque;
 
 class Process {
 
-    protected $_queue;
+    protected $_mq;
     protected $_maxWorkerNum = 10;    // 同时存在的最大工作进程数
     protected $_reforkInterval = 3;   // fork工作进程的时间间隔，秒；如果非数字或小于0，则主进程执行一次后立即退出
     protected $_taskBacklog = 3;      // 当积压的任务数大于此值时，才fork新进程处理
@@ -23,24 +23,24 @@ class Process {
      * @param $name
      * @param callable $callback
      */
-    public static function monitor($name, Tasque $tasque) {
+    public static function monitor($name, callable $callback) {
         $cmd = "ps aux | fgrep master | fgrep '{$name}' | fgrep -v fgrep | wc -l";
         if (shell_exec($cmd) == 0) {
             $pid = pcntl_fork();
             if ($pid == 0) {
-                (new self($tasque))->handle();
+                call_user_func_array($callback, []);
             } else {
                 echo "forked $name {$pid}\n";
             }
         }
     }
 
-    public function __construct($queue, $max_worker_num = 10, $refork_interval = 8) {
-        $this->_ppid = getmypid();
-        $this->_queue = $queue;
+    public function __construct($mq, $max_worker_num = 10, $refork_interval = 8) {
+        $this->_mq = $mq;
         $this->_maxWorkerNum = intval($max_worker_num);
         $this->_reforkInterval = intval($refork_interval);
-        cli_set_process_title('[master] ' . $this->_queue->name());
+        $this->_ppid = getmypid();
+        cli_set_process_title('[master] ' . $this->_mq->name());
     }
 
     public function handleSign($signo) {
@@ -76,10 +76,6 @@ class Process {
         while (true) {
             if (count($this->_workers) < $this->_maxWorkerNum) {
                 $task_count = $this->_getTaskCount();
-                // 0. Prefix和Task类名一起，唯一决定一种任务
-                // 1. 把任务注册到process中，有几种任务就要有几个master（dispatcher）进程！
-                // 2. 根据任务获取到队列和哈希，以及队列中剩余任务的数量
-                // 3. 根据剩余任务数量来决定开启的worker进程的数量
                 if ((count($this->_workers) == 0 && $task_count > 0) || $task_count > $this->_taskBacklog) {
                     $pid = pcntl_fork();
                     if ($pid < 0) {
@@ -88,7 +84,7 @@ class Process {
                         $this->_workers[$pid] = $pid;
                         echo "worker[{$pid}] starts\n";
                     } else {
-                        cli_set_process_title('[worker] ' . $this->_queue->name());
+                        cli_set_process_title('[worker] ' . $this->_mq->name());
                         $stime = time();
                         while (true) {
                             if (time() - $stime > $this->_maxWorkerTtl) {
@@ -98,7 +94,7 @@ class Process {
 //                                echo "parent prcess [$this->_ppid] not found!\n";
 //                                break;
 //                            }
-                            $task = $this->_queue->dequeue();
+                            $task = $this->_mq->dequeue();
                             if ($task) {
                                 $task->perform();
 //                                $this->handleWorker($task);
@@ -150,7 +146,7 @@ class Process {
     }
 
     protected function _getTaskCount() {
-        return$this->_queue->len(time() + 60);
+        return $this->_mq->len(time() + 60);
     }
 
 }
