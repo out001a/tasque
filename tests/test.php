@@ -15,24 +15,9 @@ $tasques = [];
 
 $task_classes = [MyTask1::class, MyTask2::class];
 foreach ($task_classes as $task_class) {
-    $tasque = new \Tasque\Tasque($redis, 'LOAN:' . $task_class);
+    $tasque = new \Tasque\Tasque('LOAN:' . $task_class, $redis);
     $tasques[] = $tasque;
-    for ($i = 0; $i < 5000; $i++) {
+    for ($i = 0; $i < 10000; $i++) {
         $tasque->enqueue(new $task_class($i, time(), [rand(), time()]));
-    }
-}
-
-exit();
-
-foreach ($tasques as $tasque) {
-//    $task = $tasque->dequeue();
-//    if ($task) {
-//        $task->perform();
-//    }
-    $pid = pcntl_fork();
-    if ($pid == 0) {
-        (new \Tasque\Process($tasque))->handle();
-    } else {
-        echo "\n\nforked {$pid}\n\n";
     }
 }

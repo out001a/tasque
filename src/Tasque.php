@@ -9,24 +9,25 @@
 namespace Tasque;
 
 class Tasque {
-    private $_redis;
 
     private $_name;
     private $_queue;
     private $_dict;
 
-    public function __construct($redis, $name)
+    private $_redis;
+
+    public function __construct($name, $redis)
     {
-        $this->init($redis, $name);
+        $this->init($name, $redis);
     }
 
-    public function init($redis, $name)
+    public function init($name, $redis)
     {
-        $this->_redis = $redis;
-
         $this->_name = 'tasque:' . $name;
         $this->_queue = $this->_name . ':queue';
         $this->_dict = $this->_name . ':dict';
+
+        $this->_redis = $redis;
     }
 
     public function name() {
@@ -48,17 +49,20 @@ class Tasque {
         return $this->_redis->zAdd($this->_queue, $task->score, $task->id);
     }
 
-    public function dequeue()
+    public function dequeue($limit = 50)
     {
-        $result = $this->_pop($this->_redis, $this->_queue, time(), 1);
+        $tasks = [];
+        $result = $this->_pop($this->_redis, $this->_queue, time(), $limit);
         if ($result) {
-            list($task_id,) = $result[0];
-            $task = $this->_redis->hGet($this->_dict, $task_id);
-            if ($task) {
-                return unserialize($task);
+            foreach ($result as $val) {
+                list($task_id,) = $val;
+                $task = $this->_redis->hGet($this->_dict, $task_id);
+                if ($task) {
+                    $tasks[] = $task;
+                }
             }
         }
-        return false;
+        return $tasks;
     }
 
     public function remove($member)

@@ -8,14 +8,32 @@
 
 require_once __DIR__ . '/bootstrap.php';
 
+use \Tasque\Process\MsgQueue;
+use \Tasque\Process\Process;
+
 $task_classes = [MyTask1::class, MyTask2::class];
 
 foreach ($task_classes as $task_class) {
     $name = 'LOAN:' . $task_class;
-    \Tasque\Process::monitor($name, function() use ($name) {
+    Process::monitor($name, function() use ($name) {
         $redis = new \Redis();
         $redis->pconnect('192.168.33.10', 6379);
-        $tasque = new \Tasque\Tasque($redis, $name);
-        (new \Tasque\Process($tasque))->handle();
+        $tasque = new \Tasque\Tasque($name, $redis);
+
+        // 消息队列对象
+        $mq = new MsgQueue(array('path' => "/tmp/{$name}", 'proj' => $name));
+        // 初始化，自定义一些参数
+        Process::init($tasque->name(), $mq, 8, 100);
+        Process::register('dispatch', function() use ($tasque) {
+            return $tasque->dequeue();
+        });
+        Process::register('worker',  function($task) {
+            $task = unserialize($task);
+            if ($task) {
+                $task->perform();
+            }
+        });
+        // 执行
+        Process::handle();
     });
 }
