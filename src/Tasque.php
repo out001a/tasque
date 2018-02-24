@@ -91,6 +91,13 @@ class Tasque {
     return result
 LUA;
 
-        return $redis->eval($lua, [$queue, 0, $limit - 1, $score], 1);
+        static $sha = '';
+        if (!$sha) {
+            $sha = $redis->script('load', $lua);
+            var_dump($sha);
+        }
+
+        //return $redis->eval($lua, [$queue, 0, $limit - 1, $score], 1);
+        return $redis->evalSha($sha, [$queue, 0, $limit - 1, $score], 1);
     }
 }
