@@ -49,7 +49,7 @@ class Tasque {
         return $this->_redis->zAdd($this->_queue, $task->score, $task->id);
     }
 
-    public function dequeue($limit = 50)
+    public function dequeue($limit = 10)
     {
         $tasks = [];
         $result = $this->_pop($this->_redis, $this->_queue, time(), $limit);
@@ -94,7 +94,6 @@ LUA;
         static $sha = '';
         if (!$sha) {
             $sha = $redis->script('load', $lua);
-            var_dump($sha);
         }
 
         //return $redis->eval($lua, [$queue, 0, $limit - 1, $score], 1);

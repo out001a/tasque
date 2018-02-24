@@ -39,7 +39,7 @@ class MsgQueue {
         return msg_send($this->_queue, 1, msgpack_pack($msg), false);
     }
 
-    public function receive($msgsize = 1024) {
+    public function receive($msgsize = 4096) {
         $msg = null;
         $msgtype = null;
         $errcode = 0;

@@ -8,11 +8,15 @@
  * Usage:
  *  // 初始化，自定义一些参数
  *  Process::init(消息队列对象, 同时存在的最大子进程数, fork子进程的时间间隔);
+ * Process::register('taskCount', function () {
+ *      // 注册获取待处理的任务数
+ *      return 1;
+ *  });
  *  Process::register('dispatch', function() {
  *      // 分发待处理的任务列表，需要返回array
  *      return array();
  *  });
- *  Process::register('worker',  function($ppid) {
+ *  Process::register('worker',  function() {
  *      // 注册work进程的业务逻辑
  *      return do_work();
  *  });
@@ -25,6 +29,8 @@
 
 namespace Tasque\Process;
 
+use Exception;
+
 class Process {
 
     protected static $_title;
@@ -32,14 +38,14 @@ class Process {
 
     protected static $_maxWorkerNum = 15;    // 同时存在的最大工作进程数
     protected static $_reforkInterval = 500; // fork工作进程的时间间隔，毫秒；如果非数字或小于0，则主进程执行一次后立即退出
-    protected static $_taskBacklog = 10;     // 当积压的任务数大于此值时，才fork新进程处理
-    protected static $_maxWorkerTtl = 1800;  // 工作进程的存活时间，如果大于这个时间则在当前任务处理完成后退出，秒
+    protected static $_taskBacklog = 20;     // 当积压的任务数大于此值时，才fork新进程处理
+    protected static $_maxWorkerTtl = 900;   // 工作进程的存活时间，如果大于这个时间则在当前任务处理完成后退出，秒
+    protected static $_maxMqLen = 20;        // 消息队列的最大长度，若超过该长度，则不向mq中新增任务，而先消费
 
     protected static $_registers = array();
     protected static $_workers = array();
 
     protected static $_ppid = 0;
-    protected static $_needExit = false;
 
     /**
      * 监控master进程是否存在，不存在则启动
@@ -102,13 +108,11 @@ class Process {
         pcntl_signal(SIGCHLD, array(__CLASS__, 'handleSign'));
 
         while (true) {
-            if (self::$_needExit) {
-                echo "I am exiting ...\n";
-                return true;
+            $task_count = self::_taskCount();
+            if ($task_count['left'] > 0 && $task_count['mq'] < self::$_maxMqLen) {
+                self::_setTasks(self::_dispatch());
             }
-
-            $task_count = self::_setTasks(self::_dispatch());
-            if (self::_trigger($task_count)) {
+            if (self::_trigger($task_count['total'])) {
                 $pid = pcntl_fork();
                 if ($pid < 0) {
                     throw new Exception('could not fork process!');
@@ -137,7 +141,7 @@ class Process {
 
             if (!is_numeric(self::$_reforkInterval) || self::$_reforkInterval < 0) {
                 $ppid = self::$_ppid;
-                $count = self::_getTaskCount();
+                $count = self::_taskCount();
                 echo date("Y-m-d H:i:s") . ", proc[{$ppid}] finished, {$count} tasks remain.\n";
                 exit();
             } else {
@@ -167,6 +171,10 @@ class Process {
         self::register('dispatch', $callable);
     }
 
+    public static function registerTaskCount($callable) {
+        self::register('taskCount', $callable);
+    }
+
     protected static function _getRegisterCallable($type) {
         if (isset(self::$_registers[$type]) && is_callable(self::$_registers[$type])) {
             return self::$_registers[$type];
@@ -184,13 +192,19 @@ class Process {
         return call_user_func_array($callable, $args);
     }
 
+    protected static function _taskCount($args = array()) {
+        $count_mq = intval(self::$_mq->len());
+        $count_left = call_user_func_array(self::_getRegisterCallable('taskCount'), $args);
+        return [
+            'total' => $count_mq + $count_left,
+            'mq'    => $count_mq,
+            'left'  => $count_left,
+        ];
+    }
+
     protected static function _trigger($task_count) {
         return count(self::$_workers) < self::$_maxWorkerNum
             && ((count(self::$_workers) == 0 && $task_count > 0) || $task_count > self::$_taskBacklog);
-    }
-
-    protected static function _getTaskCount() {
-        return intval(self::$_mq->len());
     }
 
     protected static function _setTasks($tasks) {
@@ -199,7 +213,6 @@ class Process {
                 self::$_mq->send($task);
             }
         }
-        return self::_getTaskCount();
     }
 
     protected static function _getTask() {
