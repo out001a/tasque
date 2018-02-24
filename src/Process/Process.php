@@ -40,7 +40,6 @@ class Process {
     protected static $_reforkInterval = 500; // fork工作进程的时间间隔，毫秒；如果非数字或小于0，则主进程执行一次后立即退出
     protected static $_taskBacklog = 20;     // 当积压的任务数大于此值时，才fork新进程处理
     protected static $_maxWorkerTtl = 900;   // 工作进程的存活时间，如果大于这个时间则在当前任务处理完成后退出，秒
-    protected static $_maxMqLen = 20;        // 消息队列的最大长度，若超过该长度，则不向mq中新增任务，而先消费
 
     protected static $_registers = array();
     protected static $_workers = array();
@@ -107,11 +106,17 @@ class Process {
         pcntl_signal(SIGTERM, array(__CLASS__, 'handleSign'));
         pcntl_signal(SIGCHLD, array(__CLASS__, 'handleSign'));
 
-        while (true) {
-            $task_count = self::_taskCount();
-            if ($task_count['left'] > 0 && $task_count['mq'] < self::$_maxMqLen) {
+        $pid = pcntl_fork();
+        if ($pid === 0) {
+            cli_set_process_title('[dispatcher] ' . self::$_title);
+            while (true) {
                 self::_setTasks(self::_dispatch());
             }
+            exit();
+        }
+
+        while (true) {
+            $task_count = self::_taskCount();
             if (self::_trigger($task_count['total'])) {
                 $pid = pcntl_fork();
                 if ($pid < 0) {
@@ -142,7 +147,7 @@ class Process {
             if (!is_numeric(self::$_reforkInterval) || self::$_reforkInterval < 0) {
                 $ppid = self::$_ppid;
                 $count = self::_taskCount();
-                echo date("Y-m-d H:i:s") . ", proc[{$ppid}] finished, {$count} tasks remain.\n";
+                echo date("Y-m-d H:i:s") . ", proc[{$ppid}] finished, {$count['total']} tasks remain.\n";
                 exit();
             } else {
                 usleep(self::$_reforkInterval * 1000);
@@ -194,7 +199,8 @@ class Process {
 
     protected static function _taskCount($args = array()) {
         $count_mq = intval(self::$_mq->len());
-        $count_left = call_user_func_array(self::_getRegisterCallable('taskCount'), $args);
+//        $count_left = call_user_func_array(self::_getRegisterCallable('taskCount'), $args);
+        $count_left = 0;
         return [
             'total' => $count_mq + $count_left,
             'mq'    => $count_mq,

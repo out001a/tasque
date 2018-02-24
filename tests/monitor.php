@@ -28,7 +28,7 @@ foreach ($task_classes as $task_class) {
             return $tasque->len(time() + 60);
         });
         Process::register('dispatch', function() use ($tasque) {
-            return $tasque->dequeue();
+            return $tasque->dequeue(500);
         });
         Process::register('worker',  function($task) {
             $task = unserialize($task);
