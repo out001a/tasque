@@ -39,7 +39,7 @@ class Process {
     protected static $_maxWorkerNum = 10;    // 同时存在的最大工作进程数
     protected static $_reforkInterval = 5;   // fork工作进程的时间间隔，秒；如果非数字或小于0，则主进程执行一次后立即退出
     protected static $_taskBacklog = 20;     // 当积压的任务数大于此值时，才fork新进程处理
-    protected static $_maxWorkerTtl = 300;   // 工作进程的存活时间，如果大于这个时间则在当前任务处理完成后退出，秒
+    protected static $_maxWorkerTtl = 600;   // 工作进程的存活时间，如果大于这个时间则在当前任务处理完成后退出，秒
 
     protected static $_registers = array();
     protected static $_dispatchers = array();

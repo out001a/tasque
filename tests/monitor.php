@@ -28,15 +28,21 @@ foreach ($task_classes as $task_class) {
         // 初始化，自定义一些参数
         Process::init($tasque->name(), $mq, 6, 5);
         Process::register('taskCount', function () use ($tasque) {
-            return $tasque->len(time() + 60);
+            return $tasque->len(time() + 30);
         });
         Process::register('dispatch', function() use ($tasque) {
             return $tasque->dequeue(500);
         });
-        Process::register('worker',  function($task) {
+        Process::register('worker',  function($task) use ($name) {
+            static $tasque = null;
+            if (!$tasque) {
+                $redis = new \Redis();
+                $redis->pconnect('192.168.33.10', 6379, 0, getmypid());
+                $tasque = new \Tasque\Tasque($name, $redis);
+            }
             $task = unserialize($task);
             if ($task) {
-                $task->perform();
+                $task->handle($tasque);
             }
         });
         // 执行
