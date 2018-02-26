@@ -36,15 +36,17 @@ class Process {
     protected static $_title;
     protected static $_mq;
 
-    protected static $_maxWorkerNum = 15;    // 同时存在的最大工作进程数
-    protected static $_reforkInterval = 500; // fork工作进程的时间间隔，毫秒；如果非数字或小于0，则主进程执行一次后立即退出
+    protected static $_maxWorkerNum = 10;    // 同时存在的最大工作进程数
+    protected static $_reforkInterval = 5;   // fork工作进程的时间间隔，秒；如果非数字或小于0，则主进程执行一次后立即退出
     protected static $_taskBacklog = 20;     // 当积压的任务数大于此值时，才fork新进程处理
-    protected static $_maxWorkerTtl = 900;   // 工作进程的存活时间，如果大于这个时间则在当前任务处理完成后退出，秒
+    protected static $_maxWorkerTtl = 300;   // 工作进程的存活时间，如果大于这个时间则在当前任务处理完成后退出，秒
 
     protected static $_registers = array();
+    protected static $_dispatchers = array();
     protected static $_workers = array();
 
     protected static $_ppid = 0;
+    protected static $_needExit = false;
 
     /**
      * 监控master进程是否存在，不存在则启动
@@ -63,7 +65,7 @@ class Process {
         }
     }
 
-    public static function init($title, $mq, $max_worker_num = 15, $refork_interval = 500) {
+    public static function init($title, $mq, $max_worker_num = 10, $refork_interval = 5) {
         self::$_title = $title;
         self::$_mq = $mq;
         self::$_maxWorkerNum = intval($max_worker_num);
@@ -80,16 +82,23 @@ class Process {
                     //foreach (self::$_workers as $pid) {
                     //    posix_kill($pid, $signo);
                     //}
+                    exit();
                 } else {
                     // 子进程接受到SIGTERM信号时的操作
-                    posix_kill($pid, $signo);
+                    //posix_kill($pid, $signo);
+                    //exit();
+                    self::$_needExit = true;
                 }
-                exit();
                 break;
             case SIGCHLD:
                 $cpid = pcntl_wait($status);
-                unset(self::$_workers[$cpid]);
-                echo "worker[{$cpid}] exits with {$status}.\n";
+                if (isset(self::$_dispatchers[$cpid])) {
+                    unset(self::$_dispatchers[$cpid]);
+                    echo "dispatcher[{$cpid}] exits with {$status}.\n";
+                } else {
+                    unset(self::$_workers[$cpid]);
+                    echo "worker[{$cpid}] exits with {$status}.\n";
+                }
                 break;
             default:
                 break;
@@ -106,21 +115,38 @@ class Process {
         pcntl_signal(SIGTERM, array(__CLASS__, 'handleSign'));
         pcntl_signal(SIGCHLD, array(__CLASS__, 'handleSign'));
 
-        $pid = pcntl_fork();
-        if ($pid === 0) {
-            cli_set_process_title('[dispatcher] ' . self::$_title);
-            while (true) {
-                self::_setTasks(self::_dispatch());
-            }
-            exit();
-        }
-
         while (true) {
-            $task_count = self::_taskCount();
-            if (self::_trigger($task_count['total'])) {
+            if (empty(self::$_dispatchers)) {
                 $pid = pcntl_fork();
                 if ($pid < 0) {
-                    throw new Exception('could not fork process!');
+                    throw new Exception('could not fork dispatcher process!');
+                } elseif ($pid > 0) {
+                    self::$_dispatchers[$pid] = $pid;
+                    echo "dispatcher[{$pid}] starts\n";
+                } else {
+                    cli_set_process_title('[dispatcher] ' . self::$_title);
+                    while (true) {
+                        self::_setTasks(self::_dispatch());
+
+                        if (posix_getppid() != self::$_ppid) {
+                            echo "parent prcess [" . self::$_ppid . "] not found!\n";
+                            break;
+                        }
+                        if (self::$_needExit) {
+                            break;
+                        }
+                    }
+                    $cpid = getmypid();
+                    $count = self::_taskCount();
+                    echo date("Y-m-d H:i:s") . ", dispatcher[{$cpid}] finished, {$count} tasks remain.\n";
+                    exit();
+                }
+            }
+
+            if (self::_trigger()) {
+                $pid = pcntl_fork();
+                if ($pid < 0) {
+                    throw new Exception('could not fork worker process!');
                 } elseif ($pid > 0) {
                     self::$_workers[$pid] = $pid;
                     echo "worker[{$pid}] starts\n";
@@ -131,10 +157,9 @@ class Process {
                         if (time() - $stime > self::$_maxWorkerTtl) {
                             break;
                         }
-//                            if (posix_getppid() != self::$_ppid) {
-//                                echo "parent prcess [" . self::$_ppid . "] not found!\n";
-//                                break;
-//                            }
+                        if (self::$_needExit) {
+                            break;
+                        }
                         $task = self::_getTask();
                         if ($task) {
                             self::handleWorker($task);
@@ -146,11 +171,10 @@ class Process {
 
             if (!is_numeric(self::$_reforkInterval) || self::$_reforkInterval < 0) {
                 $ppid = self::$_ppid;
-                $count = self::_taskCount();
-                echo date("Y-m-d H:i:s") . ", proc[{$ppid}] finished, {$count['total']} tasks remain.\n";
+                echo date("Y-m-d H:i:s") . ", master[{$ppid}] finished.\n";
                 exit();
             } else {
-                usleep(self::$_reforkInterval * 1000);
+                sleep(self::$_reforkInterval);
             }
         }
     }
@@ -198,19 +222,13 @@ class Process {
     }
 
     protected static function _taskCount($args = array()) {
-        $count_mq = intval(self::$_mq->len());
-//        $count_left = call_user_func_array(self::_getRegisterCallable('taskCount'), $args);
-        $count_left = 0;
-        return [
-            'total' => $count_mq + $count_left,
-            'mq'    => $count_mq,
-            'left'  => $count_left,
-        ];
+        return call_user_func_array(self::_getRegisterCallable('taskCount'), $args);
     }
 
-    protected static function _trigger($task_count) {
-        return count(self::$_workers) < self::$_maxWorkerNum
-            && ((count(self::$_workers) == 0 && $task_count > 0) || $task_count > self::$_taskBacklog);
+    protected static function _trigger() {
+        $worker_count = count(self::$_workers);
+        $mq_len = intval(self::$_mq->len());
+        return $worker_count < self::$_maxWorkerNum && (($worker_count == 0 && $mq_len > 0) || $mq_len > self::$_taskBacklog);
     }
 
     protected static function _setTasks($tasks) {
