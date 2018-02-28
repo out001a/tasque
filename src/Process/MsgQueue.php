@@ -45,7 +45,8 @@ class MsgQueue {
         $msg = null;
         $msgtype = null;
         $errcode = 0;
-        if (msg_receive($this->_queue, 0, $msgtype, $msgsize, $msg, false, MSG_IPC_NOWAIT, $errcode)) {
+        //if (msg_receive($this->_queue, 0, $msgtype, $msgsize, $msg, false, MSG_IPC_NOWAIT, $errcode)) {
+        if (msg_receive($this->_queue, 0, $msgtype, $msgsize, $msg, false, 0, $errcode)) {
             return msgpack_unpack($msg);
         }
         // MSG_IPC_NOWAIT
