@@ -127,6 +127,7 @@ class Process {
                     cli_set_process_title('[dispatcher] ' . self::$_title);
                     while (true) {
                         self::_setTasks(self::_dispatch());
+                        usleep(20 * 1000);
 
                         if (posix_getppid() != self::$_ppid) {
                             // echo "parent prcess [" . self::$_ppid . "] not found!\n";
