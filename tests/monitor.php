@@ -26,7 +26,7 @@ foreach ($task_classes as $task_class) {
         // 消息队列对象
         $mq = new MsgQueue(array('path' => "/tmp/{$name}", 'proj' => $name));
         // 初始化，自定义一些参数
-        Process::init($tasque->name(), $mq, 6, 5);
+        Process::init($tasque->name(), $mq, 10, 5);
         Process::register('taskCount', function () use ($tasque) {
             return $tasque->len(time() + 30);
         });
