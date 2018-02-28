@@ -21,6 +21,6 @@ foreach ($task_classes as $task_class) {
     $tasque = new \Tasque\Tasque('LOAN:' . $task_class, $redis);
     $tasques[] = $tasque;
     for ($i = 0; $i < 10000; $i++) {
-        $tasque->enqueue(new $task_class($i, time(), [rand(), time()]));
+        $tasque->enqueue(new $task_class($i, [rand(), time()]));
     }
 }

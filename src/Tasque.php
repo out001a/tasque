@@ -49,7 +49,7 @@ class Tasque {
         return $this->_redis->zAdd($this->_queue, $task->score, $task->id);
     }
 
-    public function dequeue($limit = 10)
+    public function dequeue($limit = 50)
     {
         $tasks = [];
         $result = $this->_pop($this->_redis, $this->_queue, time(), $limit);

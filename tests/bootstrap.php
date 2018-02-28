@@ -28,7 +28,7 @@ class MyTask1 extends \Tasque\Task {
 
     public function perform()
     {
-        $s = date('Y-m-d H:i:s') . "\t" . __CLASS__ . ": {$this->id}\t{$this->times}\n";
+        $s = date('Y-m-d H:i:s') . "\t" . __CLASS__ . ": {$this->id}\t{$this->times}\t{$this->score}\n";
         file_put_contents('/tmp/tasque.log', $s, FILE_APPEND | LOCK_EX);
         return rand(0, 99) < 50 ? true : false;
     }
@@ -44,7 +44,7 @@ class MyTask2 extends \Tasque\Task {
 
     public function perform()
     {
-        $s = date('Y-m-d H:i:s') . "\t" .  __CLASS__ . ": {$this->id}\t{$this->times}\n";
+        $s = date('Y-m-d H:i:s') . "\t" .  __CLASS__ . ": {$this->id}\t{$this->times}\t{$this->score}\n";
         file_put_contents('/tmp/tasque.log', $s, FILE_APPEND | LOCK_EX);
         return rand(0, 99) < 50 ? true : false;
     }

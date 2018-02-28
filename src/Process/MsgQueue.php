@@ -2,6 +2,8 @@
 
 namespace Tasque\Process;
 
+use Exception;
+
 class MsgQueue {
 
     private $_queue;
@@ -50,7 +52,7 @@ class MsgQueue {
         if ($errcode == 42) {
             return null;
         }
-        throw new Exception ("Error: got code [{$errcode}] while receiving msg from queue!", $errcode);
+        throw new Exception("Error: got code [{$errcode}] while receiving msg from queue!", $errcode);
     }
 
     public function state() {

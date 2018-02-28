@@ -31,7 +31,7 @@ foreach ($task_classes as $task_class) {
             return $tasque->len(time() + 30);
         });
         Process::register('dispatch', function() use ($tasque) {
-            return $tasque->dequeue(500);
+            return $tasque->dequeue(100);
         });
         Process::register('worker',  function($task) use ($name) {
             static $tasque = null;

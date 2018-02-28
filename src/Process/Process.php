@@ -129,7 +129,7 @@ class Process {
                         self::_setTasks(self::_dispatch());
 
                         if (posix_getppid() != self::$_ppid) {
-                            echo "parent prcess [" . self::$_ppid . "] not found!\n";
+                            // echo "parent prcess [" . self::$_ppid . "] not found!\n";
                             break;
                         }
                         if (self::$_needExit) {
