@@ -43,7 +43,7 @@ class Tasque {
         }
     }
 
-    public function enqueue(Task $task)
+    public function enqueue(Task\Abstr $task)
     {
         $this->_redis->hSet($this->_dict, $task->id, serialize($task));
         return $this->_redis->zAdd($this->_queue, $task->score, $task->id);
@@ -91,12 +91,13 @@ class Tasque {
     return result
 LUA;
 
+        // return $redis->eval($lua, [$queue, 0, $limit - 1, $score], 1);
+
         static $sha = '';
         if (!$sha) {
             $sha = $redis->script('load', $lua);
         }
 
-        //return $redis->eval($lua, [$queue, 0, $limit - 1, $score], 1);
         return $redis->evalSha($sha, [$queue, 0, $limit - 1, $score], 1);
     }
 }

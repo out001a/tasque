@@ -53,7 +53,7 @@ class MsgQueue {
         if ($errcode == 42) {
             return null;
         }
-        throw new Exception("Error: got code [{$errcode}] while receiving msg from queue!", $errcode);
+        throw new Exception("MessageQueue: got code [{$errcode}] while receiving msg!", $errcode);
     }
 
     public function state() {

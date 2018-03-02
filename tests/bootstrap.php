@@ -18,7 +18,7 @@ spl_autoload_register(function($class) {
     }
 });
 
-class MyTask1 extends \Tasque\Task {
+class MyTask1 extends \Tasque\Task\Abstr {
 
     protected static $_delays = [
         1   => 3,
@@ -30,11 +30,14 @@ class MyTask1 extends \Tasque\Task {
     {
         $s = date('Y-m-d H:i:s') . "\t" . __CLASS__ . ": {$this->id}\t{$this->times}\t{$this->score}\n";
         file_put_contents('/tmp/tasque.log', $s, FILE_APPEND | LOCK_EX);
-        return rand(0, 99) < 50 ? true : false;
+        if (rand(0, 99) < 50) {
+            throw new \Tasque\Task\NeedRetryException();
+        }
+        return true;
     }
 }
 
-class MyTask2 extends \Tasque\Task {
+class MyTask2 extends \Tasque\Task\Abstr {
 
     protected static $_delays = [
         1   => 2,
@@ -46,6 +49,9 @@ class MyTask2 extends \Tasque\Task {
     {
         $s = date('Y-m-d H:i:s') . "\t" .  __CLASS__ . ": {$this->id}\t{$this->times}\t{$this->score}\n";
         file_put_contents('/tmp/tasque.log', $s, FILE_APPEND | LOCK_EX);
-        return rand(0, 99) < 50 ? true : false;
+        if (rand(0, 99) < 50) {
+            throw new \Tasque\Task\NeedRetryException();
+        }
+        return true;
     }
 }

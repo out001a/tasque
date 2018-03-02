@@ -2,13 +2,15 @@
 /**
  * Created by PhpStorm.
  * User: shanhuanming
- * Date: 2018/2/22
- * Time: 12:10
+ * Date: 2018/3/2
+ * Time: 10:29
  */
 
-namespace Tasque;
+namespace Tasque\Task;
 
-abstract class Task {
+use Tasque\Tasque;
+
+abstract class Abstr {
     public $id;              // 任务id
     public $payload = [];   // 任务负载
     public $times = 0;      // 任务执行次数
@@ -25,10 +27,8 @@ abstract class Task {
     final public function handle(Tasque $tasque)
     {
         try {
-            if (!$this->perform()) {
-                throw new \Exception('need retry');
-            }
-        } catch (\Exception $e) {
+            $this->perform();
+        } catch (NeedRetryException $e) {
             $this->times++;
             if (isset(static::$_delays[$this->times])) {
                 // $this->score += static::$_delays[$this->times];

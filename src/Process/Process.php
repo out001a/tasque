@@ -121,7 +121,7 @@ class Process {
                 if ($pid < 0) {
                     throw new Exception('could not fork dispatcher process!');
                 } elseif ($pid > 0) {
-                    self::$_dispatchers[$pid] = $pid;
+                    self::$_dispatchers[$pid] = time();
                     echo "dispatcher[{$pid}] starts\n";
                 } else {
                     cli_set_process_title('[dispatcher] ' . self::$_title);
@@ -144,26 +144,33 @@ class Process {
                 }
             }
 
+            foreach (self::$_workers as $pid => $stime) {
+                if (time() - $stime > self::$_maxWorkerTtl) {
+                    posix_kill($pid, SIGTERM);
+                }
+            }
+
             if (self::_trigger()) {
                 $pid = pcntl_fork();
                 if ($pid < 0) {
                     throw new Exception('could not fork worker process!');
                 } elseif ($pid > 0) {
-                    self::$_workers[$pid] = $pid;
+                    self::$_workers[$pid] = time();
                     echo "worker[{$pid}] starts\n";
                 } else {
                     cli_set_process_title('[worker] ' . self::$_title);
-                    $stime = time();
                     while (true) {
-                        if (time() - $stime > self::$_maxWorkerTtl) {
+                        $task = self::_getTask();
+                        if ($task) {
+                            self::handleWorker($task);
+                        }
+
+                        if (posix_getppid() != self::$_ppid) {
+                            // echo "parent prcess [" . self::$_ppid . "] not found!\n";
                             break;
                         }
                         if (self::$_needExit) {
                             break;
-                        }
-                        $task = self::_getTask();
-                        if ($task) {
-                            self::handleWorker($task);
                         }
                     }
                     exit();
