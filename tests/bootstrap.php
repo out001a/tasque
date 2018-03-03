@@ -27,7 +27,7 @@ $task_classes = [];
 $task_files = glob(__DIR__ . '/Task/*.php');
 if ($task_files) {
     foreach ($task_files as $file) {
-        $task_class = pathinfo($file, PATHINFO_FILENAME);
+        $task_class = 'Tests\\Task\\' . pathinfo($file, PATHINFO_FILENAME);
         if (class_exists($task_class)) {
             $task_classes[] = $task_class;
         }
