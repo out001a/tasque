@@ -9,7 +9,7 @@
  *  // 初始化，自定义一些参数
  *  Process::init(消息队列对象, 同时存在的最大子进程数, fork子进程的时间间隔);
  * Process::register('taskCount', function () {
- *      // 注册获取待处理的任务数
+ *      // 返回待处理的任务数（随便写个数也可以）
  *      return 1;
  *  });
  *  Process::register('dispatch', function() {

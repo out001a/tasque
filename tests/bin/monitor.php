@@ -12,7 +12,7 @@ use \Tasque\Process\MsgQueue;
 use \Tasque\Process\Process;
 
 foreach ($task_classes as $task_class) {
-    $name = 'LOAN:' . $task_class;
+    $name = 'Prefix:' . $task_class;
     Process::monitor($name, function() use ($name) {
         $redis = new \Redis();
         $redis->pconnect('192.168.33.10', 6379);

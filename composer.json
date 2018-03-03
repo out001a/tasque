@@ -1,4 +1,17 @@
 {
+  "name": "out001a/tasque",
+  "type": "library",
+  "description": "Redis based library for creating background tasks and processing them later.",
+  "keywords": ["job", "task", "delay", "background", "redis", "tasque"],
+  "homepage": "http://www.github.com/out001a/tasque/",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "shanhuanming",
+      "email": "shanhuanming@foxmail.com"
+    }
+  ],
+
   "autoload": {
     "psr-4": {
       "Tasque\\": "src/"
@@ -7,6 +20,8 @@
 
   "require": {
     "php": ">=7.0",
+    "ext-pcntl": "*",
+    "ext-sysvmsg": "*",
     "ext-redis": ">=3.1.0"
   },
 

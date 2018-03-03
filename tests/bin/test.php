@@ -13,7 +13,7 @@ $redis->pconnect('192.168.33.10', 6379);
 
 $tasques = [];
 foreach ($task_classes as $task_class) {
-    $tasque = new \Tasque\Tasque('LOAN:' . $task_class, $redis);
+    $tasque = new \Tasque\Tasque('Prefix:' . $task_class, $redis);
     $tasques[] = $tasque;
     for ($i = 0; $i < 100000; $i++) {
         $tasque->enqueue(new $task_class($i, [rand(), time()]));
