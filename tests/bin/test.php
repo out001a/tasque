@@ -12,11 +12,6 @@ $redis = new \Redis();
 $redis->pconnect('192.168.33.10', 6379);
 
 $tasques = [];
-
-$task_classes = [
-    MyTask1::class,
-    MyTask2::class,
-];
 foreach ($task_classes as $task_class) {
     $tasque = new \Tasque\Tasque('LOAN:' . $task_class, $redis);
     $tasques[] = $tasque;

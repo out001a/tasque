@@ -11,11 +11,6 @@ require_once __DIR__ . '/bootstrap.php';
 use \Tasque\Process\MsgQueue;
 use \Tasque\Process\Process;
 
-$task_classes = [
-    MyTask1::class,
-    MyTask2::class,
-];
-
 foreach ($task_classes as $task_class) {
     $name = 'LOAN:' . $task_class;
     Process::monitor($name, function() use ($name) {
