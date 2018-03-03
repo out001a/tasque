@@ -6,7 +6,7 @@
  * Time: 下午4:22
  */
 
-require_once __DIR__ . '/bootstrap.php';
+require_once dirname(__DIR__) . '/bootstrap.php';
 
 $redis = new \Redis();
 $redis->pconnect('192.168.33.10', 6379);

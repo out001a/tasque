@@ -3,7 +3,7 @@
  * 处理多进程任务
  *
  * @author shanhuanming shanhuanming@foxmail.com
- * @version 0.9.1
+ * @version 1.0.0
  *
  * Usage:
  *  // 初始化，自定义一些参数

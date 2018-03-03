@@ -7,51 +7,29 @@
  */
 
 // ./vendor/bin/phpunit --bootstrap ./tests/bootstrap.php tests/
+// ./vendor/bin/phpunit --bootstrap tests/
 
 require_once dirname(__DIR__) . "/vendor/autoload.php";
 
 ini_set('default_socket_timeout', -1);
 
 spl_autoload_register(function($class) {
-    if (file_exists(__DIR__ . "/$class.php")) {
-        require_once __DIR__ . "/$class.php";
+    $prefix = 'Tests\\';
+    if (substr($class, 0, strlen($prefix)) == $prefix) {
+        $file = __DIR__ . str_replace('\\', DIRECTORY_SEPARATOR, str_replace($prefix, '\\', $class)) . '.php';
+        if (file_exists($file)) {
+            require_once $file;
+        }
     }
 });
 
-class MyTask1 extends \Tasque\Task\Abstr {
-
-    protected static $_delays = [
-        1   => 3,
-        2   => 7,
-        3   => 15,
-    ];
-
-    public function perform()
-    {
-        $s = date('Y-m-d H:i:s') . "\t" . __CLASS__ . ": {$this->id}\t{$this->times}\t{$this->score}\n";
-        file_put_contents('/tmp/tasque.log', $s, FILE_APPEND | LOCK_EX);
-        if (rand(0, 99) < 50) {
-            throw new \Tasque\Task\NeedRetryException();
+$task_classes = [];
+$task_files = glob(__DIR__ . '/Task/*.php');
+if ($task_files) {
+    foreach ($task_files as $file) {
+        $task_class = pathinfo($file, PATHINFO_FILENAME);
+        if (class_exists($task_class)) {
+            $task_classes[] = $task_class;
         }
-        return true;
-    }
-}
-
-class MyTask2 extends \Tasque\Task\Abstr {
-
-    protected static $_delays = [
-        1   => 2,
-        2   => 3,
-        3   => 4,
-    ];
-
-    public function perform()
-    {
-        $s = date('Y-m-d H:i:s') . "\t" .  __CLASS__ . ": {$this->id}\t{$this->times}\t{$this->score}\n";
-        file_put_contents('/tmp/tasque.log', $s, FILE_APPEND | LOCK_EX);
-        if (rand(0, 99) < 50) {
-            throw new \Tasque\Task\NeedRetryException();
-        }
-        return true;
     }
 }
