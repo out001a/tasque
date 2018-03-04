@@ -1,0 +1,13 @@
+language: php
+
+php:
+  - 7.0
+  - 7.1
+  - 7.2
+
+env:
+  - ENABLE_REDIS_EXT=1
+
+before_script:
+  - sh -c "if [ $ENABLE_REDIS_EXT -eq 1 ]; then phpenv config-add tests/misc/php-config.ini; fi"
+  - composer install

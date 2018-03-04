@@ -67,8 +67,8 @@ class Tasque {
 
     public function remove($member)
     {
-        return $this->_redis->zRem($this->_queue, $member)
-            && $this->_redis->hDel($this->_dict, $member);
+        $this->_redis->zRem($this->_queue, $member);
+        return $this->_redis->hDel($this->_dict, $member);
     }
 
     private function _pop($redis, $queue, $score, $limit) {

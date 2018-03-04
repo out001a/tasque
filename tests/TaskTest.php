@@ -37,6 +37,8 @@ final class TaskTest extends TestCase
         $mockTasque = $this->getMockBuilder(\Tasque\Tasque::class)->setConstructorArgs(['test', 'redis'])->getMock();
         $this->_task->handle($mockTasque);
         self::assertEquals(3, $this->_task->times);
+        $this->_task->handle($mockTasque);
+        self::assertEquals(4, $this->_task->times);
     }
 
 }

@@ -1,4 +1,4 @@
-# tasque
+# tasque [![Build Status](https://api.travis-ci.org/out001a/tasque.png)](https://travis-ci.org/out001a/tasque)
 
 ## 定时优先级任务处理
 
@@ -13,11 +13,11 @@
 
 ### 简介
 
-系统中包含三个相对独立的组件：进程、任务和优先级队列。
+包含三个相对独立的组件：进程、任务和优先级队列。
 
 1. 进程
 
-    进程组件在`src/Process`目录下，在我之前的一个小项目`https://github.com/out001a/php-process`的基础上做了些改进，可以满足在生产环境中使用
+    进程组件在`src/Process`目录下，在我之前的一个小项目[php-process](https://github.com/out001a/php-process)的基础上做了些改进，可以满足在生产环境中使用。
 
     用法如下：
     ```php
@@ -45,14 +45,39 @@
 
 3. 优先级队列
 
-    `src/Tasque.php`，基于redis实现了入队、出队等操作。
+    `src/Tasque.php`，基于redis实现了入队、出队等操作。出队按照队列元素的score值从小到大进行。
 
 ### 使用
 
-`tests/bin/test.php`是创建任务并入队的例子
+* 加载
 
-`tests/bin/monitor.php`是后台进程分发并处理任务的例子
+    1. 执行 `composer require out001a/tasque`，
+        或者将依赖添加到项目的`composer.json`文件中，
+        ```json
+        {
+            "require": {
+                "out001a/tasque": "1.*"
+            }
+        }
+        ```
+        然后执行 `composer install` 或 `composer update`
+        
+    2. 在代码中添加
+        ```php
+        require 'vendor/autoload.php';
+        ```
+
+* 示例
+    - `tests/bin/test.php`是创建任务并入队的例子
+    - `tests/bin/monitor.php`是后台进程分发并处理任务的例子
 
 ### 单元测试
 
-`./vendor/bin/phpunit --bootstrap tests/`
+```bash
+./vendor/bin/phpunit
+```
+
+### TODO
+1. 加入日志组件
+2. 使用环境变量控制各种参数
+3. Web控制台
