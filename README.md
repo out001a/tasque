@@ -11,6 +11,34 @@
 任务执行失败时，需要根据指定的规则在特定的时间间隔后重试，直到执行成功或规则结束为止
 3. 时间要求是秒级
 
+### 架构
+
+![Architecture](./assets/Architecture.png)
+
+### 使用
+
+* 加载
+
+    1. 执行 `composer require out001a/tasque`，
+        或者将依赖添加到项目的`composer.json`文件中，
+        ```json
+        {
+            "require": {
+                "out001a/tasque": "1.*"
+            }
+        }
+        ```
+        然后执行 `composer install` 或 `composer update`
+        
+    2. 在代码中添加
+        ```php
+        require 'vendor/autoload.php';
+        ```
+
+* 示例
+    - `tests/bin/test.php`是创建任务并入队的例子
+    - `tests/bin/monitor.php`是后台进程分发并处理任务的例子
+
 ### 简介
 
 包含三个相对独立的组件：进程、任务和优先级队列。
@@ -47,30 +75,6 @@
 
     `src/Tasque.php`，基于redis实现了入队、出队等操作。出队按照队列元素的score值从小到大进行。
 
-### 使用
-
-* 加载
-
-    1. 执行 `composer require out001a/tasque`，
-        或者将依赖添加到项目的`composer.json`文件中，
-        ```json
-        {
-            "require": {
-                "out001a/tasque": "1.*"
-            }
-        }
-        ```
-        然后执行 `composer install` 或 `composer update`
-        
-    2. 在代码中添加
-        ```php
-        require 'vendor/autoload.php';
-        ```
-
-* 示例
-    - `tests/bin/test.php`是创建任务并入队的例子
-    - `tests/bin/monitor.php`是后台进程分发并处理任务的例子
-
 ### 单元测试
 
 ```bash
@@ -78,6 +82,9 @@
 ```
 
 ### TODO
-1. 加入日志组件
-2. 使用环境变量控制各种参数
-3. Web控制台
+1. redis断线重连处理
+2. 支持平滑重启
+3. inotify监控指定文件的变化并自动重启进程
+4. 加入日志组件
+5. 使用环境变量控制各种参数
+6. Web控制台
