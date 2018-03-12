@@ -13,7 +13,7 @@
 
 ### 架构
 
-![Architecture](./assets/Architecture.png)
+![Architecture](http://on-img.com/chart_image/5aa4f6a2e4b01fbdcce96684.png)
 
 ### 使用
 
